@@ -1,4 +1,5 @@
 # 🏙️ CivicPulse: Smart Governance & Grievance Redressal Platform
+**🔴 LIVE DEMO:** [Click here to view the live website!](https://civicpulse-fab0.onrender.com)
 
 CivicPulse is a full-stack, GIS-enabled web application designed to bridge the gap between citizens and municipal authorities. It provides a real-time, transparent platform for reporting infrastructure issues (like potholes, broken streetlights, or water leaks) and tracks them through to resolution.
 
