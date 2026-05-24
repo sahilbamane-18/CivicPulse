@@ -1,0 +1,139 @@
+/* --- REPORT FORM STYLES --- */
+.report-form-wrapper {
+    max-width: 1100px; margin: 0 auto;
+}
+
+.form-section {
+    background: #fff; padding: 25px; border-radius: 16px;
+    margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    border: 1px solid #f2f4f7;
+}
+
+.form-section h3 {
+    margin-bottom: 20px; font-size: 16px; font-weight: 700; color: #334155;
+    display: flex; align-items: center; gap: 10px;
+}
+.form-section h3 i { color: #512da8; }
+
+/* --- 1. CATEGORY GRID (ANIMATED ICONS) --- */
+.category-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+}
+
+.category-grid input[type="radio"] { display: none; }
+
+.cat-card {
+    border: 2px solid #f1f5f9; border-radius: 12px;
+    padding: 20px 10px; text-align: center; cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: #fdfdfd; display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+
+.icon-circle {
+    width: 50px; height: 50px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-bottom: 5px; transition: 0.3s;
+}
+
+/* Colors */
+.icon-circle.brown { background: #efebe9; color: #5d4037; }
+.icon-circle.green { background: #e8f5e9; color: #2e7d32; }
+.icon-circle.blue { background: #e3f2fd; color: #1565c0; }
+.icon-circle.yellow { background: #fffde7; color: #fbc02d; }
+.icon-circle.teal { background: #e0f2f1; color: #00897b; }
+.icon-circle.purple { background: #f3e5f5; color: #7b1fa2; }
+
+/* Selection State */
+.category-grid input:checked + .cat-card {
+    border-color: #512da8; background: #f3e5f5;
+    transform: translateY(-5px); box-shadow: 0 5px 15px rgba(81, 45, 168, 0.15);
+}
+
+/* Animation on Hover */
+.cat-card:hover .icon-circle { transform: scale(1.1) rotate(5deg); }
+
+.cat-card span { font-size: 13px; font-weight: 600; color: #475569; }
+.category-grid input:checked + .cat-card span { color: #512da8; }
+
+
+/* --- 2. INPUTS & PRIORITY --- */
+.form-row { display: flex; gap: 20px; }
+.half { flex: 1; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #334155; }
+.form-group input, .form-group textarea {
+    width: 100%; padding: 12px; border: 1px solid #d0d5dd;
+    border-radius: 8px; outline: none; transition: 0.2s; background: #f8fafc;
+}
+.form-group input:focus, .form-group textarea:focus { border-color: #512da8; background: #fff; }
+
+/*NEw Change 20-2-2026 for upload related check it dev's (DRAG AND DROP UPDATED)*/
+/* Add this to your CSS file to style and center the upload zone */
+.file-upload-wrapper {
+    border: 2px dashed #d0d5dd;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    background: #f8fafc;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+/* Centers the icon and text */
+.file-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #475569;
+}
+
+.file-label i {
+    font-size: 28px;
+    color: #512da8;
+}
+
+/* A slight color change when dragging a file over it */
+.file-upload-wrapper.dragover {
+    background: #e2e8f0;
+    border-color: #512da8;
+}
+#fileInput {
+    display: none;
+}
+/* Priority Buttons (Simple) */
+.priority-options { display: flex; gap: 10px; }
+.priority-options input { display: none; }
+.p-btn {
+    flex: 1; padding: 10px; text-align: center; border: 1px solid #e2e8f0;
+    border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+}
+input[value="High"]:checked + .p-btn.high { background: #fee2e2; border-color: #ef4444; color: #b91c1c; }
+input[value="Medium"]:checked + .p-btn.medium { background: #fef3c7; border-color: #f59e0b; color: #b45309; }
+input[value="Low"]:checked + .p-btn.low { background: #dcfce7; border-color: #22c55e; color: #15803d; }
+
+
+/* --- 3. MAP STYLES --- */
+.map-wrapper { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid #d0d5dd; }
+#reportMap { height: 300px; width: 100%; z-index: 1; }
+
+.map-controls {
+    display: flex; gap: 10px; padding: 10px; background: #f8fafc; border-top: 1px solid #e2e8f0;
+}
+.gps-btn {
+    background: #512da8; color: white; border: none; padding: 10px 15px;
+    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;
+    display: flex; align-items: center; gap: 5px;
+}
+#addressInput { background: transparent; border: none; font-weight: 600; color: #334155; }
+
+
+/* --- SUBMIT BUTTON --- */
+.submit-btn-full {
+    width: 100%; background: #512da8; color: white; padding: 16px;
+    border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: 0.3s;
+}
+.submit-btn-full:hover { background: #4527a0; box-shadow: 0 5px 15px rgba(81, 45, 168, 0.3); }

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Incident Command | Civic Pulse</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_reports.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar admin-sidebar">
+            <div class="logo"><h2>Civic Pulse <span class="admin-badge">ADMIN</span></h2></div>
+            
+            
+            
+          <ul class="menu">
+        <li class="{{ 'active' if request.endpoint == 'admin_dashboard' else '' }}">
+            <a href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'admin_manage_reports' else '' }}">
+            <a href="{{ url_for('admin_manage_reports') }}">
+                <i class="fas fa-tasks"></i> Manage Reports 
+                {% if stats and stats.pending > 0 %}
+                    <span class="nav-alert">{{ stats.pending }}</span>
+                {% endif %}
+            </a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'admin_citizens' else '' }}">
+            <a href="{{ url_for('admin_citizens') }}">
+                <i class="fas fa-users"></i> Citizen Records
+            </a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'admin_stats' else '' }}">
+            <a href="{{ url_for('admin_stats') }}">
+                <i class="fas fa-chart-pie"></i> City Stats
+            </a>
+        </li>
+
+        <li class="logout">
+            <a href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </li>
+    </ul>
+        </nav>
+
+        <main class="main-content full-height">
+            <header class="command-header">
+                <div class="header-main">
+                    <h1>Incident Command</h1>
+                    <p>Validate, assign, and resolve community reports.</p>
+                </div>
+            </header>
+
+            <div class="report-layout">
+                <div class="report-feed-panel">
+                    <div class="feed-controls">
+                        <div class="search-wrapper"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search ID..." onkeyup="searchReports()"></div>
+                        <div class="filter-pills">
+                            <button class="pill active" onclick="filterReports('all', this)">All</button>
+                            <button class="pill pill-new" onclick="filterReports('Pending', this)">New</button>
+                            <button class="pill pill-active" onclick="filterReports('In Progress', this)">Active</button>
+                            <button class="pill pill-closed" onclick="filterReports('Resolved', this)">Closed</button>
+                        </div>
+                    </div>
+                    <div class="feed-list" id="reportList">
+                        {% for c in complaints %}
+                        <div class="unique-card status-{{ c.status|lower|replace(' ', '') }}" 
+                             onclick="showDetail(this)" 
+                             data-id="{{ c.id }}" 
+                             data-title="{{ c.title }}" 
+                             data-author="{{ c.author.full_name }}" 
+                             data-status="{{ c.status }}" 
+                             data-priority="{{ c.priority }}" 
+                             data-desc="{{ c.description }}" 
+                             data-date="{{ c.date_posted.strftime('%d %b %Y') }}" 
+                             data-address="{{ c.address }}" 
+                             data-lat="{{ c.latitude }}" 
+                             data-lng="{{ c.longitude }}" 
+                             data-image="{{ url_for('static', filename='uploads/complaints/' + c.image_file) }}"
+                             data-res-img="{{ c.resolution_image }}">
+                             
+                            <div class="card-accent p-{{ c.priority|lower }}"></div>
+                            <div class="card-content">
+                                <div class="card-meta-row"><span class="meta-id">#CP-{{ c.id }}</span><span class="meta-date">{{ c.date_posted.strftime('%d %b') }}</span></div>
+                                <h3 class="card-heading">{{ c.title }}</h3>
+                                <div class="card-status-row">
+                                    <span class="status-badge s-{{ c.status|lower|replace(' ', '-') }}">{{ c.status|upper }}</span>
+                                    {% if c.status != 'Resolved' and c.status != 'Rejected' %}<span class="priority-label p-{{ c.priority|lower }}">{{ c.priority }} Priority</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="pagination-footer">
+                        <button id="prevBtn" onclick="changePage(-1)"><i class="fas fa-chevron-left"></i></button>
+                        <span id="pageIndicator">Page 1</span>
+                        <button id="nextBtn" onclick="changePage(1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="report-workspace">
+                    <div id="empty-state" class="empty-view">
+                        <div class="pulse-radar"></div>
+                        <h3>Select a Report</h3>
+                        <p>Click on a card from the feed to view details.</p>
+                    </div>
+                    <div id="detail-view" style="display: none;" class="detail-container">
+                        <div class="workspace-header">
+                            <div><span class="category-tag" id="d-priority">Priority</span><h1 id="d-title">Title</h1><p class="report-byline">Reported by <strong id="d-author">User</strong> on <span id="d-date">Date</span></p></div>
+                            <div id="d-status-badge" class="large-status-badge">STATUS</div>
+                        </div>
+                        <div class="workspace-grid">
+                            <div class="ws-left">
+                                <div class="data-card"><label>Description</label><p id="d-desc">...</p></div>
+                                <div class="data-card"><label>Location</label><p id="d-address">...</p><div id="detailMap"></div></div>
+                            </div>
+                            <div class="ws-right">
+                                <div class="visual-card"><label>Evidence</label><div class="evidence-box" onclick="openLightbox()"><img id="d-image" src="" alt="Proof"><div class="hover-overlay">View</div></div></div>
+                                <div class="action-console">
+                                    <label>Actions</label>
+                                    <div id="actions-pending" style="display: none;"><button class="btn-action btn-approve" onclick="approveReport()"><i class="fas fa-check"></i> Approve</button><button class="btn-action btn-reject" onclick="rejectReport()"><i class="fas fa-ban"></i> Reject</button><p class="deduct-note">*Rejecting deducts 10 pts.</p></div>
+                                    <div id="actions-progress" style="display: none;"><button class="btn-action btn-resolve" onclick="openResolveModal()"><i class="fas fa-check-double"></i> Resolve</button></div>
+                                    <div id="actions-done" style="display: none;"></div>
+                                    <div id="actions-rejected" style="display: none;"><div class="state-banner rejected">Rejected</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="resolveModal" class="modal">
+        <div class="modal-content modern-modal">
+            <span class="close-btn" onclick="closeResolveModal()">&times;</span>
+            <div class="modal-header-custom"><div class="icon-circle"><i class="fas fa-check"></i></div><h2>Confirm Resolution</h2><p>Upload proof to notify citizen.</p></div>
+            <form id="resolveForm" method="POST" enctype="multipart/form-data">
+                <div class="input-group"><label>Remarks</label><div class="input-wrapper"><textarea name="admin_comment" rows="3" required></textarea></div></div>
+                <div class="input-group"><label>Proof</label><div class="file-upload-wrapper"><input type="file" name="resolution_image" id="fileInput" accept="image/*" required onchange="previewFile()"><div class="upload-content"><i class="fas fa-cloud-upload-alt"></i><span>Upload Image</span></div><img id="imgPreview" class="img-preview" style="display: none;"></div></div>
+                <button type="submit" class="submit-btn modern-btn"><span>Mark Resolved (+50 pts)</span></button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="lightboxModal" class="lightbox" onclick="closeLightbox()">
+        <span style="position:absolute; top:20px; right:30px; color:white; font-size:40px; cursor:pointer;">&times;</span>
+        <img id="lightbox-img" src="">
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin_reports.js') }}"></script>
+    <script>
+        function previewFile() { 
+            const preview = document.getElementById('imgPreview'); 
+            const file = document.getElementById('fileInput').files[0]; 
+            const content = document.getElementById('uploadContent'); 
+            const reader = new FileReader(); 
+            reader.addEventListener("load", function () { 
+                preview.src = reader.result; 
+                preview.style.display = 'block'; 
+                content.style.display = 'none'; 
+            }, false); 
+            if (file) reader.readAsDataURL(file); 
+        }
+    </script>
+</body>
+</html>

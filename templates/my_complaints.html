@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Complaints - Civic Pulse</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/complaints.css') }}">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <nav class="sidebar">
+            <div class="logo"><h2>Civic Pulse</h2></div>
+            <ul class="menu">
+                <li class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">
+                    <a href="{{ url_for('dashboard') }}"><i class="fas fa-th-large"></i> Dashboard</a>
+                </li>
+                <li class="{{ 'active' if request.endpoint == 'report_issue' else '' }}">
+                    <a href="{{ url_for('report_issue') }}"><i class="fas fa-pen-fancy"></i> Report Issue</a>
+                </li>
+                <li class="active">
+                    <a href="{{ url_for('my_complaints') }}"><i class="fas fa-file-alt"></i> My Complaints</a>
+                </li>
+                <li class="{{ 'active' if request.endpoint == 'profile' else '' }}">
+                    <a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a>
+                </li>
+                <li class="{{ 'active' if request.endpoint == 'about' else '' }}">
+                    <a href="{{ url_for('about') }}"><i class="fas fa-info-circle"></i> About Us</a>
+                </li>
+            
+           <li class="logout">
+            <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </li>
+    </ul>
+        </nav>
+
+        <main class="main-content">
+            <header>
+                <div class="welcome-text">
+                    <h1>My Complaints</h1>
+                    <p>Track the status of the issues you have reported.</p>
+                </div>
+            </header>
+
+            <div class="complaints-wrapper">
+                
+                <div class="report-list">
+                    {% for complaint in complaints %}
+                    <div class="report-card {{ complaint.status.lower().replace(' ', '-') }}" 
+                         onclick="showDetails(this)"
+                         data-id="{{ complaint.id }}"
+                         data-title="{{ complaint.title }}"
+                         data-status="{{ complaint.status }}"
+                         data-category="{{ complaint.category }}"
+                         data-priority="{{ complaint.priority }}"
+                         data-desc="{{ complaint.description }}"
+                         data-address="{{ complaint.address }}"
+                         data-image="{{ complaint.image_file }}"
+                         data-lat="{{ complaint.latitude }}"
+                         data-lng="{{ complaint.longitude }}"
+                         data-res-img="{{ complaint.resolution_image }}"
+                         data-res-comment="{{ complaint.admin_comment }}">
+                         
+                        <div class="card-top">
+                            <span class="category-tag">{{ complaint.category }}</span>
+                            <span>{{ complaint.date_posted.strftime('%d %b, %Y') }}</span>
+                        </div>
+                        <h3>{{ complaint.title }}</h3>
+                        <div class="card-bottom">
+                            <span class="status-pill {{ complaint.status.lower().replace(' ', '-') }}">{{ complaint.status }}</span>
+                            <span class="priority-text {{ complaint.priority.lower() }}"><i class="fas fa-flag"></i> {{ complaint.priority }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="no-data">
+                        <i class="fas fa-folder-open" style="font-size: 40px; margin-bottom:15px; color:#cbd5e1;"></i>
+                        <p>You haven't reported any issues yet.</p>
+                        <a href="{{ url_for('report_issue') }}" class="btn-link">Report an Issue</a>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="report-details" id="detailsPanel">
+                    <div class="empty-state" id="emptyState">
+                        <i class="fas fa-hand-pointer" style="font-size: 50px; margin-bottom: 20px; color:#e2e8f0;"></i>
+                        <h2>Select a Report</h2>
+                        <p>Click on any card to view detailed tracking information.</p>
+                    </div>
+
+                    <div id="contentState" style="display: none;">
+                        <div class="detail-header">
+                            <div>
+                                <h2 id="d-title">Title</h2>
+                                <span class="ticket-id" id="d-id">#ID</span>
+                            </div>
+                            <button class="download-btn" onclick="downloadReceipt()"><i class="fas fa-download"></i> Receipt</button>
+                        </div>
+
+                        <div class="timeline-box">
+                            <h4>Tracking Status</h4>
+                            <div class="timeline">
+                                <div class="step active"><div class="circle"><i class="fas fa-file-signature"></i></div><p>Submitted</p></div>
+                                <div class="step" id="step-progress"><div class="circle"><i class="fas fa-hard-hat"></i></div><p>In Progress</p></div>
+                                <div class="step" id="step-resolved"><div class="circle"><i class="fas fa-check"></i></div><p>Resolved</p></div>
+                            </div>
+                        </div>
+
+                        <div class="detail-grid">
+                            <div class="info-box"><label>Category</label><p id="d-category">Cat</p></div>
+                            <div class="info-box"><label>Priority</label><p><span id="d-priority" class="p-badge">Prio</span></p></div>
+                            <div class="info-box full"><label>Address / Location</label><p id="d-address">Address</p></div>
+                            <div class="info-box full"><label>Description</label><p id="d-desc">Desc</p></div>
+                            
+                            <div class="info-box full visual-row">
+                                <div class="visual-box">
+                                    <label>Location Map</label>
+                                    <div id="miniMap"></div>
+                                </div>
+                                <div class="visual-box">
+                                    <label>Your Evidence</label>
+                                    <img id="d-image" src="" onclick="window.open(this.src)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="resolutionSection" class="resolution-box" style="display: none;">
+                            <h4><i class="fas fa-check-circle"></i> Official Resolution</h4>
+                            <div class="res-content">
+                                <div class="res-text">
+                                    <label>Admin Comment</label>
+                                    <p id="d-res-comment">Issue resolved.</p>
+                                </div>
+                                <div class="res-img-box">
+                                    <label>Proof of Fix</label>
+                                    <img id="d-res-image" src="">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="lightboxModal" class="lightbox" onclick="closeLightbox()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center;">
+        <span style="position:absolute; top:20px; right:30px; color:white; font-size:40px; cursor:pointer;">&times;</span>
+        <img id="lightbox-img" src="" style="max-width:90%; max-height:90%; border-radius:10px;">
+    </div>
+
+    <script src="{{ url_for('static', filename='js/complaints.js') }}"></script>
+</body>
+</html>

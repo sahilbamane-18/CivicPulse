@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civic Pulse - Dashboard</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+    <nav class="sidebar">
+    <div class="logo"><h2>Civic Pulse</h2></div>
+    <ul class="menu">
+        
+        <li class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">
+            <a href="{{ url_for('dashboard') }}"><i class="fas fa-th-large"></i> Dashboard</a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'report_issue' else '' }}">
+            <a href="{{ url_for('report_issue') }}"><i class="fas fa-pen-fancy"></i> Report Issue</a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'my_complaints' else '' }}">
+            <a href="{{ url_for('my_complaints') }}"><i class="fas fa-file-alt"></i> My Complaints</a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'profile' else '' }}">
+            <a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a>
+        </li>
+
+       <li class="{{ 'active' if request.endpoint == 'about' else '' }}">
+    <a href="{{ url_for('about') }}"><i class="fas fa-info-circle"></i> About Us</a>
+</li>
+
+        <li class="logout">
+            <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </li>
+    </ul>
+</nav>
+        <main class="main-content">
+            
+            <header>
+                <div class="welcome-text">
+                    <h1>Welcome to CivicPulse, {{ user.full_name }} 👋</h1>
+                    <p>Report civic issues, track progress, and help improve your city.</p>
+                </div>
+                <div class="header-actions">
+                    <div class="points-badge">
+                        <i class="fas fa-coins"></i> {{ user.points }} Points
+                    </div>
+                </div>
+            </header>
+
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="icon-box purple"><i class="fas fa-folder"></i></div>
+                    <div class="stat-info"><h3>{{ stats.total }}</h3><p>Total Complaints</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon-box orange"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info"><h3>{{ stats.pending }}</h3><p>Pendings</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon-box blue"><i class="fas fa-spinner"></i></div>
+                    <div class="stat-info"><h3>{{ stats.progress }}</h3><p>In Progress</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon-box green"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info"><h3>{{ stats.resolved }}</h3><p>Resolved</p></div>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="chart-container">
+                    <h3>City Activity (Past 12 Months)</h3>
+                    <canvas id="activityChart"></canvas>
+                </div>
+                
+                <div class="map-container">
+                    <h3>Interactive Map View</h3>
+                    <div id="map"></div> </div>
+            </div>
+
+            <div class="leaderboard">
+                <h3><i class="fas fa-trophy" style="color: #512da8;"></i> Top Contributors</h3>
+                {% for leader in leaderboard %}
+                <div class="list-item">
+                    <span class="rank">{{ loop.index }}</span>
+                    <span class="name">{{ leader.full_name }}</span>
+                    <span class="points">{{ leader.points }} pts</span>
+                </div>
+                {% else %}
+                <p style="color:#888;">No data available.</p>
+                {% endfor %}
+            </div>
+
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

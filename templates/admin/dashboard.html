@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civic Pulse Admin</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <nav class="sidebar admin-sidebar">
+    <div class="logo"><h2>Civic Pulse <span class="admin-badge">ADMIN</span></h2></div>
+    <ul class="menu">
+        <li class="{{ 'active' if request.endpoint == 'admin_dashboard' else '' }}">
+            <a href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'admin_manage_reports' else '' }}">
+            <a href="{{ url_for('admin_manage_reports') }}">
+                <i class="fas fa-tasks"></i> Manage Reports 
+                {% if stats and stats.pending > 0 %}
+                    <span class="nav-alert">{{ stats.pending }}</span>
+                {% endif %}
+            </a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'admin_citizens' else '' }}">
+            <a href="{{ url_for('admin_citizens') }}">
+                <i class="fas fa-users"></i> Citizen Records
+            </a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'admin_stats' else '' }}">
+            <a href="{{ url_for('admin_stats') }}">
+                <i class="fas fa-chart-pie"></i> City Stats
+            </a>
+        </li>
+
+        <li class="logout">
+            <a href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </li>
+    </ul>
+</nav>
+
+        <main class="main-content">
+            <header style="margin-bottom: 25px;">
+                <div class="welcome-text">
+                    <h1>City Command Center 🚀</h1>
+                    <p>Real-time infrastructure monitoring active.</p>
+                </div>
+            </header>
+
+            <section class="stats-grid">
+                <div class="stat-card purple-glass">
+                    <div class="stat-icon bg-p"><i class="fas fa-layer-group"></i></div>
+                    <div><h3>{{ stats.total }}</h3><p>Total Reports</p></div>
+                </div>
+                <div class="stat-card red-glass">
+                    <div class="stat-icon bg-r"><i class="fas fa-exclamation-circle"></i></div>
+                    <div><h3>{{ stats.pending }}</h3><p>Critical / Pending</p></div>
+                </div>
+                <div class="stat-card blue-glass">
+                    <div class="stat-icon bg-b"><i class="fas fa-sync-alt fa-spin"></i></div>
+                    <div><h3>{{ stats.progress }}</h3><p>In Resolution</p></div>
+                </div>
+                <div class="stat-card green-glass">
+                    <div class="stat-icon bg-g"><i class="fas fa-check-circle"></i></div>
+                    <div><h3>{{ stats.resolved }}</h3><p>Resolved Cases</p></div>
+                </div>
+            </section>
+
+            <section class="bento-grid">
+                
+                <div class="bento-item map-box">
+                    <h3 style="margin-bottom: 10px; display:flex; justify-content:space-between;">
+                        <span><i class="fas fa-map-marked-alt"></i> Geo-Analytics</span>
+                        <span style="font-size:12px; cursor:pointer;">Expand</span>
+                    </h3>
+                    <div id="adminMap"></div> 
+                </div>
+
+                <div class="bento-item chart-box">
+                    <h3 style="margin-bottom: 10px;"><i class="fas fa-chart-line"></i> Resolution Efficiency</h3>
+                    <canvas id="efficiencyChart"></canvas>
+                </div>
+
+                <div class="bento-item feed-box">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                        <h3 style="color:#512da8;"><i class="fas fa-bolt"></i> Live Incidents</h3>
+                        <a href="#" style="font-size:12px; color:#512da8; font-weight:bold;">View All</a>
+                    </div>
+                    
+                    {% for c in complaints %}
+                    <div class="incident-row">
+                        <div class="incident-icon p-{{ c.priority|lower }}">
+                            <i class="fas fa-exclamation"></i>
+                        </div>
+                        <div class="incident-info">
+                            <h4>{{ c.title }}</h4>
+                            <span class="meta">{{ c.category }} • {{ c.date_posted.strftime('%d %b') }}</span>
+                        </div>
+                        
+                        <div style="text-align:right;">
+                            <span class="status-pill s-{{ c.status|lower|replace(' ', '-') }}">{{ c.status }}</span>
+                            <div class="action-bar">
+                                {% if c.status == 'Pending' %}
+                                <button class="mini-btn btn-blue" title="Start Work" onclick="startWork(this, '{{ c.id }}')"><i class="fas fa-hammer"></i></button>
+                                {% endif %}
+                                {% if c.status == 'In Progress' %}
+                                <button class="mini-btn btn-green" title="Resolve" onclick="openResolveModal('{{ c.id }}')"><i class="fas fa-check"></i></button>
+                                {% endif %}
+                                {% if c.status == 'Resolved' %}
+                                <span style="color:#10b981; font-size:14px;"><i class="fas fa-check-circle"></i></span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+    </div>
+
+
+    <div id="resolveModal" class="modal">
+    <div class="modal-content modern-modal">
+        <span class="close-btn" onclick="closeResolveModal()">&times;</span>
+        
+        <div class="modal-header">
+            <div class="icon-box"><i class="fas fa-check-double"></i></div>
+            <h2>Confirm Resolution</h2>
+            <p>Upload proof to notify the citizen and close the ticket.</p>
+        </div>
+        
+        <form id="resolveForm" method="POST" enctype="multipart/form-data">
+            
+            <div class="input-group">
+                <label>Admin Remarks</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-comment-alt"></i>
+                    <textarea name="admin_comment" rows="3" placeholder="Describe how the issue was fixed..." required></textarea>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Proof of Resolution</label>
+                <div class="file-upload-wrapper">
+                    <input type="file" name="resolution_image" id="fileInput" accept="image/*" required onchange="previewFile()">
+                    <div class="upload-content" id="uploadContent">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Click to Upload Image</span>
+                    </div>
+                    <img id="imgPreview" class="img-preview" style="display: none;">
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn modern-btn">
+                <span>Mark as Resolved (+50 pts)</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

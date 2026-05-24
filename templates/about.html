@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Civic Pulse</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <nav class="sidebar">
+            <div class="logo"><h2>Civic Pulse</h2></div>
+            <ul class="menu">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-th-large"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('report_issue') }}"><i class="fas fa-pen-fancy"></i> Report Issue</a></li>
+                <li><a href="{{ url_for('my_complaints') }}"><i class="fas fa-file-alt"></i> My Complaints</a></li>
+                <li><a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a></li>
+                <li class="active"><a href="{{ url_for('about') }}"><i class="fas fa-info-circle"></i> About Us</a></li>
+                <li class="logout"><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header>
+                <div class="welcome-text">
+                    <h1>About Us 🚀</h1>
+                    <p>Building smarter cities, one report at a time.</p>
+                </div>
+                <div class="header-actions">
+                    <div class="points-badge"><i class="fas fa-coins"></i> {{ user.points }} Points</div>
+                </div>
+            </header>
+
+            <div class="about-container">
+                
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h2>We Are <span class="gradient-text">Civic Pulse</span></h2>
+                        <p>A next-generation platform empowering citizens to take charge of their city's infrastructure. We bridge the gap between problems and solutions using technology.</p>
+                        <div class="badges">
+                            <span class="badge">📢 Report Issues</span>
+                            <span class="badge">🏆 Earn Points</span>
+                            <span class="badge">🏙️ Upgrade Your City</span>
+                        </div>
+                    </div>
+                    
+                    <div class="hero-visual">
+                       <img src="{{ url_for('static', filename='img/my-city.png') }}" alt="3D City" class="floating-img">
+                    </div>
+                </div>
+
+                <h3 class="section-title">Why Choose Us?</h3>
+                <div class="card-grid">
+                    
+                    <div class="tilt-card">
+                        <div class="card-icon purple"><i class="fas fa-bolt"></i></div>
+                        <h3>Lightning Fast</h3>
+                        <p>Report issues in under 30 seconds. Our geo-tagging tech ensures pin-point accuracy.</p>
+                    </div>
+
+                    <div class="tilt-card">
+                        <div class="card-icon blue"><i class="fas fa-shield-alt"></i></div>
+                        <h3>Transparency</h3>
+                        <p>Track every step. From "Submitted" to "Resolved", you see exactly what the admin sees.</p>
+                    </div>
+
+                    <div class="tilt-card">
+                        <div class="card-icon orange"><i class="fas fa-trophy"></i></div>
+                        <h3>Gamified Impact</h3>
+                        <p>Earn XP for every report. Climb the ranks from Citizen to Hero and win rewards.</p>
+                    </div>
+
+                </div>
+
+                <div class="copyright-footer">
+                    <p>&copy; 2026 Civic Pulse Initiative. All Rights Reserved.</p>
+                    <p>Designed with ❤️ for a Better Tomorrow.</p>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener("mousemove", (e) => {
+            document.querySelectorAll(".tilt-card").forEach((card) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const rotateX = ((y - centerY) / centerY) * -10; 
+                    const rotateY = ((x - centerX) / centerX) * 10;
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+                } else {
+                    card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale(1)`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

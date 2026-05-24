@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Citizen Registry | Civic Pulse</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_citizens.css') }}">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <nav class="sidebar admin-sidebar">
+            <div class="logo">
+                <h2>Civic Pulse <span class="admin-badge">ADMIN</span></h2>
+            </div>
+            
+           <ul class="menu">
+        <li class="{{ 'active' if request.endpoint == 'admin_dashboard' else '' }}">
+            <a href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'admin_manage_reports' else '' }}">
+            <a href="{{ url_for('admin_manage_reports') }}">
+                <i class="fas fa-tasks"></i> Manage Reports 
+                {% if stats and stats.pending > 0 %}
+                    <span class="nav-alert">{{ stats.pending }}</span>
+                {% endif %}
+            </a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'admin_citizens' else '' }}">
+            <a href="{{ url_for('admin_citizens') }}">
+                <i class="fas fa-users"></i> Citizen Records
+            </a>
+        </li>
+
+        <li class="{{ 'active' if request.endpoint == 'admin_stats' else '' }}">
+            <a href="{{ url_for('admin_stats') }}">
+                <i class="fas fa-chart-pie"></i> City Stats
+            </a>
+        </li>
+
+        <li class="logout">
+            <a href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </li>
+    </ul>
+        </nav>
+
+        <main class="main-content full-height">
+            
+            <header class="command-header">
+                <div class="header-main">
+                    <h1>Citizen Registry</h1>
+                    <p>Monitor user rankings, points, and community contributions.</p>
+                </div>
+            </header>
+
+            <div class="split-layout">
+                
+                <div class="list-panel">
+                    <div class="panel-controls">
+                        <div class="search-bar">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="userSearch" placeholder="Search Citizens..." onkeyup="searchUsers()">
+                        </div>
+                        <div class="rank-filters">
+                            <button class="rank-btn active" onclick="filterRank('all', this)">All</button>
+                            <button class="rank-btn" onclick="filterRank('Citizen', this)">Citizens</button>
+                            <button class="rank-btn" onclick="filterRank('Activist', this)">Activists</button>
+                            <button class="rank-btn" onclick="filterRank('Guardian', this)">Guardians</button>
+                            <button class="rank-btn" onclick="filterRank('Hero', this)">Heroes</button>
+                        </div>
+                    </div>
+
+                    <div class="user-list" id="userList">
+                        {% for user in citizens %}
+                        {% set rank = "Citizen" %}
+                        {% if user.points >= 1000 %}{% set rank = "Hero" %}
+                        {% elif user.points >= 500 %}{% set rank = "Guardian" %}
+                        {% elif user.points >= 100 %}{% set rank = "Activist" %}
+                        {% endif %}
+
+                        <div class="user-card rank-{{ rank|lower }}" 
+                             id="card-{{ user.id }}"
+                             onclick="showProfile(this)"
+                             data-id="{{ user.id }}"
+                             data-name="{{ user.full_name }}"
+                             data-email="{{ user.email }}"
+                             data-phone="{{ user.mobile_number }}"
+                             data-points="{{ user.points }}"
+                             data-rank="{{ rank }}"
+                             data-avatar="{{ url_for('static', filename='uploads/profiles/' + user.profile_pic) if user.profile_pic else 'https://ui-avatars.com/api/?name=' + user.full_name }}">
+                            
+                            <div class="rank-strip"></div>
+                            <img src="{{ url_for('static', filename='uploads/profiles/' + user.profile_pic) if user.profile_pic else 'https://ui-avatars.com/api/?name=' + user.full_name }}" class="card-avatar">
+                            
+                            <div class="card-info">
+                                <h3>{{ user.full_name }}</h3>
+                                <div class="card-stats">
+                                    <span class="rank-badge {{ rank|lower }}">{{ rank }}</span>
+                                    <span class="points" id="card-points-{{ user.id }}"><i class="fas fa-star"></i> {{ user.points }}</span>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right arrow"></i>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="detail-panel">
+                    <div id="empty-state" class="empty-view">
+                        <div class="icon-pulse"><i class="fas fa-id-card"></i></div>
+                        <h3>Select a Citizen</h3>
+                        <p>View details to manage points or ban users.</p>
+                    </div>
+
+                    <div id="profile-view" style="display: none;" class="profile-container">
+                        
+                        <div class="profile-card-modern">
+                            <div class="purple-header"></div>
+                            <div class="profile-content">
+                                <div class="avatar-box">
+                                    <img id="p-avatar" src="" alt="Avatar">
+                                </div>
+                                
+                                <div class="name-section">
+                                    <h1 id="p-name">Name</h1>
+                                    <span id="p-rank" class="rank-pill">Rank</span>
+                                </div>
+
+                                <div class="stats-section">
+                                    <div class="stat-item">
+                                        <h2 id="p-points">0</h2>
+                                        <small>Karma</small>
+                                    </div>
+                                    <div class="stat-item">
+                                        <h2>#<span id="p-id">0</span></h2>
+                                        <small>ID</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-grid">
+                            <div class="info-box">
+                                <label>CONTACT INFORMATION</label>
+                                <p><i class="fas fa-envelope"></i> <span id="p-email">...</span></p>
+                                <p><i class="fas fa-phone"></i> <span id="p-phone">...</span></p>
+                            </div>
+                            
+                            <div class="action-box">
+                                <label>Administrative Actions</label>
+                                <div class="btn-row">
+                                    <button class="act-btn btn-warn" onclick="resetPoints()">
+                                        <i class="fas fa-undo"></i> Reset Points
+                                    </button>
+                                    
+                                    <button class="act-btn btn-ban" onclick="banUser()">
+                                        <i class="fas fa-user-slash"></i> Ban User
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin_citizens.js') }}"></script>
+</body>
+</html>
